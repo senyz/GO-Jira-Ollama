@@ -84,4 +84,3 @@ go build -o jira-ai
 
 ## Лицензия 📜
 MIT License. См. файл `LICENSE`.
-```
