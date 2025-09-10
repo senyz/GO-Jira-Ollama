@@ -53,3 +53,4 @@ func main() {
 	fmt.Println("Сервер запущен на порту 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+

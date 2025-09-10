@@ -8,7 +8,13 @@ import (
 	"net/http"
 )
 
-// makeRequest - создание запроса
+// makeRequest creates and executes an HTTP request with optional authorization and content-type headers.
+//
+// @param method The HTTP method to use for the request (e.g., GET, POST).
+// @param url The URL to which the request is sent.
+// @param token The bearer token for authorization (optional).
+// @param body The body of the request (optional).
+// @return The HTTP response and any error encountered during the request.
 func makeRequest(method, url, token string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
