@@ -6,9 +6,9 @@
         <select id="model-select" onchange="selectModel(this.value)">
             <option value="">-- Выберите модель --</option>
             {{range .Models}}
-            {{range .models}}
-            <option value="{{.name}}" data-model="{{.model}}">{{.name}} ({{.details.parameter_size}})</option>
-            {{end}}
+            <option value="{{.name}}" {{if eq .name $.SelectedModel}}selected{{end}}>
+                {{.name}} ({{.details.parameter_size}})
+            </option>
             {{end}}
         </select>
         {{if .SelectedModel}}
@@ -18,50 +18,9 @@
         {{end}}
     </div>
 
-    <div class="models-grid" id="models-list">
-        {{range .Models}}
-        {{range .models}}
-        <div class="model-card">
-            <h3>{{.name}}</h3>
-            <div class="model-info">
-                <p><strong>Модель:</strong> {{.model}}</p>
-                <p><strong>Размер:</strong> {{.details.parameter_size}}</p>
-                <p><strong>Семейство:</strong> {{.details.family}}</p>
-                <p><strong>Формат:</strong> {{.details.format}}</p>
-            </div>
-            <button class="btn btn-secondary" onclick="selectModel('{{.name}}')">
-                <i class="fas fa-check"></i> Выбрать эту модель
-            </button>
-        </div>
-        {{end}}
-        {{else}}
-        <div class="error">
-            <i class="fas fa-exclamation-triangle"></i> Модели не загружены
-        </div>
-        {{end}}
-    </div>
+    
     
     <button class="btn" onclick="refreshModels()">
         <i class="fas fa-sync-alt"></i> Обновить модели
     </button>
 </div>
-
-<style>
-.models-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
-}
-.model-card {
-    background: var(--secondary-color);
-    padding: 20px;
-    border-radius: 10px;
-    border-left: 4px solid var(--primary-color);
-}
-.model-info {
-    font-size: 0.9em;
-    color: #666;
-    margin: 10px 0;
-}
-</style>

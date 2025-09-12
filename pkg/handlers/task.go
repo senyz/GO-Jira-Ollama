@@ -21,12 +21,19 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Проверяем Content-Type
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Неверный Content-Type. Ожидается application/json", http.StatusBadRequest)
+		return
+	}
+
 	var formData struct {
 		ProjectKey string `json:"projectKey"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-		http.Error(w, "Ошибка parsing JSON", http.StatusBadRequest)
+		log.Printf("Ошибка декодирования JSON: %v", err)
+		http.Error(w, "Ошибка parsing JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -35,10 +42,12 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Получение задач для проекта: %s", formData.ProjectKey)
+
 	tasks, err := jira.GetJiraTask(configObj.JiraURL, configObj.JiraToken, formData.ProjectKey)
 	if err != nil {
 		log.Printf("Ошибка получения задач: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Ошибка получения задач: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -46,6 +55,8 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	appData.Tasks = tasks
 	appData.Error = ""
 	mu.Unlock()
+
+	log.Printf("Получено %d задач для проекта %s", len(tasks), formData.ProjectKey)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{

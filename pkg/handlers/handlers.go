@@ -46,7 +46,7 @@ func InitHandlers(cfg *config.Config) {
 		log.Printf("Ошибка загрузки моделей: %v", err)
 		models = []map[string]interface{}{}
 	}
-
+	
 	appData = &AppData{
 		Models: models,
 		Tasks:  []jira.JiraTask{},
@@ -59,12 +59,12 @@ func InitHandlers(cfg *config.Config) {
 		log.Fatal("Ошибка загрузки шаблонов:", errParse)
 	}
 
-	// Отладочная информация
-	printTemplateNames(tmpl)
+	// Отладочная информация printTemplateNames(tmpl)
+
 	fs := http.FileServer(http.Dir("./templates/static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	// Регистрируем handlers
-	
+
 	http.HandleFunc("/get-tasks", getTasksHandler)
 	http.HandleFunc("/send-to-ai", sendAIHandler)
 	http.HandleFunc("/select-model", selectModelHandler)

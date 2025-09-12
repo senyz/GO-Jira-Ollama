@@ -9,6 +9,8 @@ $(document).ready(function() {
 });
 
 function selectModel(modelName) {
+    console.log('Выбор модели:', modelName);
+    
     if (!modelName) return;
     
     selectedModel = modelName;
@@ -21,8 +23,12 @@ function selectModel(modelName) {
     
     // Сохраняем выбор на сервере
     $.post('/select-model', { model: modelName })
-        .fail(function() {
-            console.error('Ошибка сохранения выбора модели');
+        .done(function(response) {
+            console.log('Модель сохранена:', response);
+        })
+        .fail(function(xhr) {
+            console.error('Ошибка сохранения выбора модели:', xhr.responseText);
+            alert('Ошибка сохранения модели: ' + xhr.responseText);
         });
 }
 
@@ -63,57 +69,4 @@ function sendToAI() {
             </div>
         `);
     });
-}
-
-function getTasks() {
-    const projectKey = $('#projectKey').val().trim();
-    
-    if (!projectKey) {
-        alert('Пожалуйста, введите ключ проекта');
-        return;
-    }
-
-    const btn = $('button').filter(function() {
-        return $(this).text().includes('Получить задачи');
-    });
-    
-    btn.prop('disabled', true).html('<span class="loading"></span> Загрузка...');
-    
-    $.post('/get-tasks', { projectKey: projectKey })
-        .done(function(response) {
-            if (response.success) {
-                updateTasksList(response.tasks);
-                $('#tasks-count').text(response.count);
-            } else {
-                alert('Ошибка при получении задач: ' + (response.error || 'Неизвестная ошибка'));
-            }
-        })
-        .fail(function(xhr) {
-            alert('Ошибка сервера: ' + xhr.responseText);
-        })
-        .always(function() {
-            btn.prop('disabled', false).html('<i class="fas fa-search"></i> Получить задачи');
-        });
-}
-
-function updateTasksList(tasks) {
-    let html = '';
-    if (tasks && tasks.length > 0) {
-        tasks.forEach(task => {
-            html += `
-                <div class="task-card">
-                    <h3>${task.key}: ${task.summary}</h3>
-                    <div class="task-info">
-                        <p><strong>Статус:</strong> ${task.status}</p>
-                        <p><strong>Приоритет:</strong> ${task.priority}</p>
-                        <p><strong>Назначена:</strong> ${task.assignee || 'Не назначена'}</p>
-                    </div>
-                    <p class="task-description">${task.description || 'Описание отсутствует'}</p>
-                </div>
-            `;
-        });
-    } else {
-        html = '<div class="error">Задачи не найдены</div>';
-    }
-    $('#tasks-list').html(html);
 }

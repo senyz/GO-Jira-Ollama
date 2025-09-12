@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"jira-go/models"
 	"jira-go/pkg/ollama"
+	"log"
 	"net/http"
 )
 
@@ -54,7 +55,7 @@ func sendAIHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(response))
 }
 
-// Обновление моделей (можно вызывать периодически)
+// Обновление моделей
 func RefreshModels() error {
 	models, err := ollama.GetOllamaModels(configObj.OllamaHost)
 	if err != nil {
@@ -65,6 +66,7 @@ func RefreshModels() error {
 	appData.Models = models
 	mu.Unlock()
 
+	log.Printf("Обновление моделей: %d моделей загружено", len(models))
 	return nil
 }
 

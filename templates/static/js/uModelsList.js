@@ -1,3 +1,4 @@
+// static/js/uModelsList.js
 // Вспомогательная функция для экранирования HTML
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
@@ -8,11 +9,37 @@ function escapeHtml(unsafe) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+function refreshModels() {
+    const btn = $('button').filter(function() {
+        return $(this).text().includes('Обновить модели');
+    });
+    
+    btn.prop('disabled', true).html('<span class="loading"></span> Обновление...');
+    
+    $.get('/api/models')
+        .done(function(data) {
+            updateModelsList(data);
+        })
+        .fail(function(xhr) {
+            $('#models-list').html('<div class="error">Ошибка загрузки моделей: ' + 
+                                  (xhr.responseText || 'Неизвестная ошибка') + '</div>');
+            console.error('Ошибка загрузки моделей:', xhr);
+        })
+        .always(function() {
+            btn.prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Обновить модели');
+        });
+}
 
 function updateModelsList(data) {
+    console.log('Получены данные моделей:', data);
+    
     let html = '';
     if (data && data.length > 0) {
+       /// console.log('Количество моделей:', data.length);
+        
         data.forEach(model => {
+           // console.log('Обработка модели:', model.name);
+            
             // Экранируем все строки для безопасности
             const modelName = escapeHtml(model.name);
             const modelId = escapeHtml(model.model);
@@ -38,7 +65,13 @@ function updateModelsList(data) {
             `;
         });
     } else {
+        console.log('Модели не получены или пустой массив');
         html = '<div class="error">Модели не загружены</div>';
     }
     $('#models-list').html(html);
+    
+    // После обновления списка, установите выбранную модель в select
+    if (selectedModel) {
+        $('#model-select').val(selectedModel);
+    }
 }
