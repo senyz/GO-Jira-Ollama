@@ -1,0 +1,38 @@
+<div class="section">
+    <h2><i class="fas fa-tasks"></i> Получить задачи из Jira</h2>
+    <form onsubmit="event.preventDefault(); getTasks();">
+        <div class="form-group">
+            <label for="projectKey"><i class="fas fa-key"></i> Ключ проекта Jira:</label>
+            <input type="text" id="projectKey" name="projectKey" required 
+                   placeholder="Например: PROJ, TASK, BUG">
+        </div>
+        <button type="submit" class="btn">
+            <i class="fas fa-search"></i> Получить задачи
+        </button>
+    </form>
+</div>
+
+<style>
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+input {
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+</style>

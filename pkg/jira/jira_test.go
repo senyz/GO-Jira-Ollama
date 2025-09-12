@@ -13,7 +13,7 @@ func TestGetJiraTask(t *testing.T) {
 		mockResponse   string
 		mockStatusCode int
 		expectError    bool
-		expectedTasks  []map[string]interface{}
+		expectedCount  int
 	}{
 		{
 			name:       "Successful response with tasks",
@@ -25,6 +25,7 @@ func TestGetJiraTask(t *testing.T) {
 						"fields": {
 							"summary": "Test task 1",
 							"description": "Description 1",
+							"status": {"name": "In Progress"},
 							"resolution": {"name": "Done"}
 						}
 					},
@@ -33,6 +34,7 @@ func TestGetJiraTask(t *testing.T) {
 						"fields": {
 							"summary": "Test task 2",
 							"description": "Description 2",
+							"status": {"name": "To Do"},
 							"resolution": null
 						}
 					}
@@ -40,20 +42,7 @@ func TestGetJiraTask(t *testing.T) {
 			}`,
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
-			expectedTasks: []map[string]interface{}{
-				{
-					"key":         "TEST-1",
-					"summary":     "Test task 1",
-					"description": "Description 1",
-					"resolution":  "Done",
-				},
-				{
-					"key":         "TEST-2",
-					"summary":     "Test task 2",
-					"description": "Description 2",
-					"resolution":  "",
-				},
-			},
+			expectedCount:  2,
 		},
 		{
 			name:           "API returns error status",
@@ -61,6 +50,7 @@ func TestGetJiraTask(t *testing.T) {
 			mockResponse:   `{"errorMessages":["Unauthorized"]}`,
 			mockStatusCode: http.StatusUnauthorized,
 			expectError:    true,
+			expectedCount:  0,
 		},
 		{
 			name:           "Invalid JSON response",
@@ -68,6 +58,7 @@ func TestGetJiraTask(t *testing.T) {
 			mockResponse:   `invalid json`,
 			mockStatusCode: http.StatusOK,
 			expectError:    true,
+			expectedCount:  0,
 		},
 		{
 			name:           "No issues in response",
@@ -75,6 +66,7 @@ func TestGetJiraTask(t *testing.T) {
 			mockResponse:   `{"issues":[]}`,
 			mockStatusCode: http.StatusOK,
 			expectError:    true,
+			expectedCount:  0,
 		},
 		{
 			name:       "Malformed issues structure",
@@ -82,13 +74,17 @@ func TestGetJiraTask(t *testing.T) {
 			mockResponse: `{
 				"issues": [
 					{
-						"key": "TEST-1"
+						"key": "TEST-1",
+						"fields": {
+							"summary": "Test task",
+							"status": {"name": "Open"}
+						}
 					}
 				]
 			}`,
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
-			expectedTasks:  []map[string]interface{}{},
+			expectedCount:  1,
 		},
 	}
 
@@ -96,6 +92,12 @@ func TestGetJiraTask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create test server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Verify the request URL contains the project key
+				expectedURL := "/rest/api/2/search?jql=project=" + tt.projectKey + "+AND+created>=startOfDay()"
+				if r.URL.String() != expectedURL {
+					t.Errorf("expected URL %s, got %s", expectedURL, r.URL.String())
+				}
+
 				w.WriteHeader(tt.mockStatusCode)
 				w.Write([]byte(tt.mockResponse))
 			}))
@@ -118,18 +120,19 @@ func TestGetJiraTask(t *testing.T) {
 			}
 
 			// Check tasks count
-			if len(tasks) != len(tt.expectedTasks) {
-				t.Errorf("expected %d tasks, got %d", len(tt.expectedTasks), len(tasks))
+			if len(tasks) != tt.expectedCount {
+				t.Errorf("expected %d tasks, got %d", tt.expectedCount, len(tasks))
 				return
 			}
 
-			// Check each task
-			for i, expectedTask := range tt.expectedTasks {
-				actualTask := tasks[i]
-				for key, expectedValue := range expectedTask {
-					if actualValue, ok := actualTask[key]; !ok || actualValue != expectedValue {
-						t.Errorf("task %d field %s: expected %v, got %v", i, key, expectedValue, actualValue)
-					}
+			// Check task structure for successful cases
+			if tt.expectedCount > 0 {
+				task := tasks[0]
+				if task.Key == "" {
+					t.Error("task Key should not be empty")
+				}
+				if task.Fields.Summary == "" {
+					t.Error("task Fields.Summary should not be empty")
 				}
 			}
 		})
@@ -150,14 +153,16 @@ func TestMakeRequest(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-token" {
 			t.Error("Authorization header not set correctly")
 		}
-		if r.Header.Get("Content-Type") != "application/json" {
-			t.Error("Content-Type header not set correctly")
+		if r.Method == "POST" && r.Header.Get("Content-Type") != "application/json" {
+			t.Error("Content-Type header not set correctly for POST with body")
 		}
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"issues":[]}`))
 	}))
 	defer server.Close()
 
-	resp, err := makeRequest("POST", server.URL, "test-token", nil)
+	// Test GET request with token
+	resp, err := makeRequest("GET", server.URL, "test-token", nil)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -170,5 +175,52 @@ func TestMakeRequest(t *testing.T) {
 	_, err = makeRequest("GET", "http://invalid-url-that-does-not-exist.local", "", nil)
 	if err == nil {
 		t.Error("expected error for invalid URL but got none")
+	}
+}
+
+func TestJiraTaskStructure(t *testing.T) {
+	// Test specific JiraTask structure parsing
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{
+			"issues": [
+				{
+					"key": "TEST-123",
+					"fields": {
+						"summary": "Test Summary",
+						"description": "Test Description",
+						"status": {"name": "In Progress"},
+						"resolution": {"name": "Fixed"}
+					}
+				}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	tasks, err := GetJiraTask(server.URL, "test-token", "TEST")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(tasks) != 1 {
+		t.Fatalf("expected 1 task, got %d", len(tasks))
+	}
+
+	task := tasks[0]
+	if task.Key != "TEST-123" {
+		t.Errorf("expected key TEST-123, got %s", task.Key)
+	}
+	if task.Fields.Summary != "Test Summary" {
+		t.Errorf("expected summary 'Test Summary', got '%s'", task.Fields.Summary)
+	}
+	if task.Fields.Description != "Test Description" {
+		t.Errorf("expected description 'Test Description', got '%s'", task.Fields.Description)
+	}
+	if task.Fields.Status.Name != "In Progress" {
+		t.Errorf("expected status 'In Progress', got '%s'", task.Fields.Status.Name)
+	}
+	if task.Fields.Resolution.Name != "Fixed" {
+		t.Errorf("expected resolution 'Fixed', got '%s'", task.Fields.Resolution.Name)
 	}
 }

@@ -8,7 +8,24 @@ import (
 	"jira-go/models"
 	"log"
 	"net/http"
+	"time"
 )
+
+type OllamaModel struct {
+	Details struct {
+		Families          []string `json:"families"`
+		Family            string   `json:"family"`
+		Format            string   `json:"format"`
+		ParameterSize     string   `json:"parameter_size"`
+		ParentModel       string   `json:"parent_model"`
+		QuantizationLevel string   `json:"quantization_level"`
+	} `json:"details"`
+	Digest     string    `json:"digest"`
+	Model      string    `json:"model"`
+	ModifiedAt time.Time `json:"modified_at"`
+	Name       string    `json:"name"`
+	Size       int       `json:"size"`
+}
 
 // sendOllamaMessage - отправка сообщения в модель Ollama
 func SendOllamaMessage(OllamaHost string, model string, messages models.Message) (string, error) {
@@ -59,9 +76,9 @@ func SendOllamaMessage(OllamaHost string, model string, messages models.Message)
 
 func GetOllamaModels(OllamaHost string) ([]map[string]interface{}, error) {
 	log.Printf("Получение списка моделей Ollama")
-	var models []map[string]interface{}
-	tagsURL := "/api/tags"
-	resp, err := http.Get(OllamaHost + tagsURL)
+
+	tagsURL := "http://" + OllamaHost + "/api/tags"
+	resp, err := http.Get(tagsURL)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка запроса списка моделей: %v", err)
 	}
@@ -79,12 +96,18 @@ func GetOllamaModels(OllamaHost string) ([]map[string]interface{}, error) {
 		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
 	}
 
-	var tags map[string]interface{}
-	if err := json.Unmarshal(body, &tags); err != nil {
+	// Правильная структура для ответа Ollama API
+	var response struct {
+		Models []map[string]interface{} `json:"models"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
 		log.Printf("Ошибка декодирования JSON: %v", err)
+		log.Printf("Тело ответа: %s", string(body))
 		return nil, fmt.Errorf("ошибка декодирования JSON: %v", err)
 	}
 
-	models = append(models, tags)
-	return models, nil
+	log.Printf("Получено %d моделей", len(response.Models))
+
+	return response.Models, nil
 }

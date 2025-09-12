@@ -1,0 +1,67 @@
+<div class="section {{if not .tasks}}hidden{{end}}" id="tasks-section">
+    <h2><i class="fas fa-list-check"></i> Найденные задачи ({{len .tasks}})</h2>
+    <div class="tasks-grid" id="tasks-list">
+        {{range .tasks}}
+        <div class="task-card">
+            <div class="task-header">
+                <span class="task-key">{{.Key}}</span>
+                <span class="task-status">{{.Fields.Status.Name}}</span>
+            </div>
+            <h3 class="task-summary">{{.Fields.Summary}}</h3>
+            <p class="task-description">{{.Fields.Description}}</p>
+            {{if .Fields.Resolution.Name}}
+            <p><strong>Резолюция:</strong> {{.Fields.Resolution.Name}}</p>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="error">
+            <i class="fas fa-info-circle"></i> Задачи не загружены
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<style>
+.tasks-grid {
+    display: grid;
+    gap: 20px;
+}
+.task-card {
+    background: var(--secondary-color);
+    padding: 25px;
+    border-radius: 12px;
+    border-left: 4px solid var(--success-color);
+}
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.task-key {
+    background: var(--primary-color);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+.task-status {
+    background: var(--success-color);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+}
+.task-summary {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+.task-description {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+</style>
