@@ -1,29 +1,21 @@
-<div class="section {{if not .Tasks}}hidden{{end}}" id="ai-form">
-    <h2><i class="fas fa-comment-dots"></i> Общение с ИИ</h2>
+<div class="section">
+    <h2><i class="fas fa-comments"></i> Общение с ИИ</h2>
     
-    <div class="model-selector">
-        <label><i class="fas fa-robot"></i> Выбранная модель:</label>
-        <div id="current-model" class="selected-model">
-            <i class="fas fa-exclamation-triangle"></i> Модель не выбрана
-        </div>
+    <div class="form-group">
+        <label for="aiMessages"><i class="fas fa-comment"></i> Сообщение для ИИ:</label>
+        <textarea id="aiMessages" name="messages" rows="6" 
+                  placeholder="Введите ваше сообщение для ИИ..." required></textarea>
     </div>
 
-    <form onsubmit="event.preventDefault(); sendToAI();">
-        <div class="form-group">
-            <label for="aiMessages"><i class="fas fa-question"></i> Ваш запрос:</label>
-            <textarea id="aiMessages" name="messages" 
-                      placeholder="Задайте вопросы о задачах, например: 'Проанализируй приоритеты' или 'Предложи план решения'"></textarea>
-        </div>
-        
-        <div class="form-group">
-            <label for="temperature"><i class="fas fa-thermometer-half"></i> Температура (0-1):</label>
-            <input type="number" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.7">
-        </div>
+    <div class="form-group">
+        <label for="temperature"><i class="fas fa-thermometer-half"></i> Температура (0-1):</label>
+        <input type="number" id="temperature" name="temperature" 
+               min="0" max="1" step="0.1" value="0.7">
+    </div>
 
-        <button type="submit" class="btn" id="ai-submit" disabled>
-            <i class="fas fa-paper-plane"></i> Отправить запрос
-        </button>
-    </form>
-    
+    <button id="ai-submit" class="btn btn-primary" onclick="sendToAI()" disabled>
+        <i class="fas fa-paper-plane"></i> Отправить ИИ
+    </button>
+
     <div id="ai-response" class="hidden"></div>
 </div>

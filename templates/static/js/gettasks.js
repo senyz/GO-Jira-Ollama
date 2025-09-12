@@ -48,13 +48,13 @@ function updateTasksList(tasks) {
     let html = '';
     if (tasks && tasks.length > 0) {
         tasks.forEach(task => {
-            // Экранируем данные для безопасности
+            // Правильно извлекаем данные из структуры Jira
             const key = escapeHtml(task.key || '');
-            const summary = escapeHtml(task.summary || '');
-            const status = escapeHtml(task.status || 'Неизвестен');
-            const priority = escapeHtml(task.priority || 'Не указан');
-            const assignee = escapeHtml(task.assignee || 'Не назначена');
-            const description = escapeHtml(task.description || 'Описание отсутствует');
+            const summary = escapeHtml(task.fields?.summary || '');
+            const status = escapeHtml(task.fields?.status?.name || 'Неизвестен');
+            const priority = escapeHtml(task.fields?.priority?.name || 'Не указан');
+            const assignee = escapeHtml(task.fields?.assignee?.displayName || 'Не назначена');
+            const description = escapeHtml(task.fields?.description || 'Описание отсутствует');
             
             html += `
                 <div class="task-card">
@@ -65,6 +65,13 @@ function updateTasksList(tasks) {
                         <p><strong>Назначена:</strong> ${assignee}</p>
                     </div>
                     <p class="task-description">${description}</p>
+                    <div class="task-actions">
+                        <label class="task-select">
+                            <input type="radio" name="selectedTask" value="${key}" 
+                                   onchange="selectTaskForAI('${key}')">
+                            Выбрать для ИИ
+                        </label>
+                    </div>
                 </div>
             `;
         });
@@ -72,4 +79,12 @@ function updateTasksList(tasks) {
         html = '<div class="error">Задачи не найдены</div>';
     }
     $('#tasks-list').html(html);
+}
+
+let selectedTaskKey = '';
+
+function selectTaskForAI(taskKey) {
+    selectedTaskKey = taskKey;
+    console.log('Выбрана задача для ИИ:', taskKey);
+    updateAIMessageWithTask();
 }

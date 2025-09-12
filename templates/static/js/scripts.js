@@ -32,7 +32,6 @@ function selectModel(modelName) {
         });
 }
 
-
 function sendToAI() {
     if (!selectedModel) {
         alert('Пожалуйста, сначала выберите модель');
@@ -49,24 +48,30 @@ function sendToAI() {
 
     $('#ai-response').removeClass('hidden').html('<div class="loading"></div> ИИ анализирует...');
     
-    $.post('/send-to-ai', {
-        model: selectedModel,
-        messages: messages,
-        temperature: temperature
-    })
-    .done(function(response) {
-        $('#ai-response').html(`
-            <div class="success">
-                <h4><i class="fas fa-robot"></i> Ответ от ${selectedModel}:</h4>
-                <p>${response.answer || 'Нет ответа'}</p>
-            </div>
-        `);
-    })
-    .fail(function(xhr) {
-        $('#ai-response').html(`
-            <div class="error">
-                <i class="fas fa-exclamation-triangle"></i> Ошибка: ${xhr.responseText || 'Неизвестная ошибка'}
-            </div>
-        `);
+    $.ajax({
+        url: '/send-to-ai',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            model: selectedModel,
+            messages: messages,
+            temperature: temperature,
+            taskKey: selectedTaskKey // Добавляем ключ задачи
+        }),
+        success: function(response) {
+            $('#ai-response').html(`
+                <div class="success">
+                    <h4><i class="fas fa-robot"></i> Ответ от ${selectedModel}:</h4>
+                    <p>${response.answer || 'Нет ответа'}</p>
+                </div>
+            `);
+        },
+        error: function(xhr) {
+            $('#ai-response').html(`
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка: ${xhr.responseText || 'Неизвестная ошибка'}
+                </div>
+            `);
+        }
     });
 }

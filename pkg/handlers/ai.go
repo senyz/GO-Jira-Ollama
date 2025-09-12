@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"jira-go/models"
 	"jira-go/pkg/ollama"
 	"log"
@@ -28,31 +29,66 @@ func sendAIHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
 	}
-	var formData AIRequest
+
+	var formData struct {
+		Model       string  `json:"model"`
+		Messages    string  `json:"messages"`
+		Temperature float64 `json:"temperature,omitempty"`
+		TaskKey     string  `json:"taskKey,omitempty"`
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
 		http.Error(w, "Ошибка parsing JSON", http.StatusBadRequest)
 		return
 	}
+
 	if formData.Messages == "" {
 		http.Error(w, "Сообщение обязательно", http.StatusBadRequest)
 		return
-
 	}
+
 	if appData.SelectedModel == "" {
 		http.Error(w, "Модель не выбрана", http.StatusBadRequest)
 		return
 	}
+
+	// Если есть ключ задачи, добавляем информацию о задаче
+	var fullMessage string
+	if formData.TaskKey != "" {
+		// Находим задачу в кэше
+		var taskInfo string
+		mu.RLock()
+		for _, task := range appData.Tasks {
+			if task.Key == formData.TaskKey {
+				taskInfo = fmt.Sprintf("Задача: %s\nОписание: %s\n",
+					task.Fields.Summary, task.Fields.Description)
+				break
+			}
+		}
+		mu.RUnlock()
+
+		fullMessage = formData.Messages + "\n\n" + taskInfo
+	} else {
+		fullMessage = formData.Messages
+	}
+
 	mess := models.Message{
 		Role:    "user",
-		Content: formData.Messages,
+		Content: fullMessage,
 	}
+
 	response, err := ollama.SendOllamaMessage(configObj.OllamaHost, appData.SelectedModel, mess)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Здесь будет логика отправки запросов к ИИ
-	w.Write([]byte(response))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"answer":  response,
+		"taskKey": formData.TaskKey,
+	})
 }
 
 // Обновление моделей
