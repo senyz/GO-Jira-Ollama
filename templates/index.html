@@ -1,1 +1,25 @@
-{{template "base" .}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {{template "head.html" .}}
+</head>
+<body>
+    <div class="container">
+        {{template "header.html" .}}
+        {{template "models.html" .}}
+        {{template "task_form.html" .}}
+        {{template "tasks.html" .}}
+        {{template "ai_form.html" .}}
+        {{template "stats.html" .}}
+        
+        <div id="message" class="{{ if .Error }}error{{ else }}hidden{{ end }}">
+            <i class="fas fa-exclamation-circle"></i> {{ .Error }}
+        </div>
+    </div>
+
+    <script>
+        // Передаем данные из Go в JavaScript
+        const initialSelectedModel = "{{.SelectedModel}}";
+    </script>
+</body>
+</html>

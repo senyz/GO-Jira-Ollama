@@ -19,12 +19,13 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Println("Warning: No .env file found, using environment variables")
 	}
-
-	return &Config{
+	cfg := &Config{
 		JiraToken:  getEnv("JIRA_TOKEN", ""),
 		JiraURL:    getEnv("JIRA_URL", "https://jira.officesvc.bz"),
 		OllamaHost: getEnv("OLLAMA_HOST", "host.docker.internal:11434"),
 	}
+	//log.Printf("Loaded .env file: %v\n", cfg)
+	return cfg
 }
 
 func getEnv(key, defaultValue string) string {

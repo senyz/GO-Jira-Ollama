@@ -1,1 +1,1 @@
-docker run -it --rm -v "${PWD}:/app" -w /app golang:alpine sh
+docker run -it --rm -v "%CD%:/app" -w /app -p 8080:8080 golang:alpine sh

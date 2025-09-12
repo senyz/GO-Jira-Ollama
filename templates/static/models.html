@@ -5,21 +5,21 @@
         <label><i class="fas fa-check-circle"></i> Выберите модель для общения:</label>
         <select id="model-select" onchange="selectModel(this.value)">
             <option value="">-- Выберите модель --</option>
-            {{range .models}}
+            {{range .Models}}
             {{range .models}}
             <option value="{{.name}}" data-model="{{.model}}">{{.name}} ({{.details.parameter_size}})</option>
             {{end}}
             {{end}}
         </select>
-        {{if .selectedModel}}
+        {{if .SelectedModel}}
         <div class="selected-model">
-            <i class="fas fa-check"></i> Выбрано: {{.selectedModel}}
+            <i class="fas fa-check"></i> Выбрано: {{.SelectedModel}}
         </div>
         {{end}}
     </div>
 
     <div class="models-grid" id="models-list">
-        {{range .models}}
+        {{range .Models}}
         {{range .models}}
         <div class="model-card">
             <h3>{{.name}}</h3>

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"html/template"
+	"jira-go/models"
 	"jira-go/pkg/config"
 	"jira-go/pkg/jira"
 	"jira-go/pkg/ollama"
@@ -10,6 +10,12 @@ import (
 	"net/http"
 	"sync"
 )
+
+type AIRequest struct {
+	Model       string  `json:"model"`
+	Messages    string  `json:"messages"`
+	Temperature float64 `json:"temperature,omitempty"`
+}
 
 var (
 	tmpl      *template.Template
@@ -30,16 +36,8 @@ type ProjectForm struct {
 	Messages   string `json:"messages"`
 }
 
-func NewHandlerService(cfg *config.Config) *AppData {
-	configObj = cfg
-	models, err := ollama.GetOllamaModels(configObj.OllamaHost)
-	return &AppData{
-		Models: models,
-		Error:  err.Error(),
-	}
-}
+// InitHandlers инициализирует обработчики HTTP запросов
 func InitHandlers(cfg *config.Config) {
-	configObj = cfg
 	configObj = cfg
 
 	// Загружаем модели при запуске
@@ -50,20 +48,26 @@ func InitHandlers(cfg *config.Config) {
 	}
 
 	appData = &AppData{
-		Models: models, // это плоский массив моделей
+		Models: models,
 		Tasks:  []jira.JiraTask{},
 	}
+
 	// Загружаем шаблоны
 	var errParse error
 	tmpl, errParse = loadTemplates()
 	if errParse != nil {
 		log.Fatal("Ошибка загрузки шаблонов:", errParse)
 	}
+
+	// Отладочная информация
 	printTemplateNames(tmpl)
+	fs := http.FileServer(http.Dir("./templates/static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	// Регистрируем handlers
-	http.HandleFunc("/select-model", selectModelHandler) // обработчик для выбора модели
+	
 	http.HandleFunc("/get-tasks", getTasksHandler)
-	http.HandleFunc("/send", sendHandler)
+	http.HandleFunc("/send-to-ai", sendAIHandler)
+	http.HandleFunc("/select-model", selectModelHandler)
 	http.HandleFunc("/api/models", modelsHandler)
 	http.HandleFunc("/api/tasks", tasksHandler)
 	http.HandleFunc("/", indexHandler)
@@ -73,158 +77,50 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	data := map[string]interface{}{
-		"models": appData.Models,
-		"tasks":  appData.Tasks,
-		"error":  appData.Error,
+	data := models.TemplateData{
+		Models:        appData.Models,
+		Tasks:         appData.Tasks,
+		Error:         appData.Error,
+		SelectedModel: appData.SelectedModel,
+		Stats: models.Stats{
+			ModelCount: len(appData.Models),
+			TaskCount:  len(appData.Tasks),
+		},
 	}
 
-	err := tmpl.Execute(w, data)
+	err := tmpl.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		log.Printf("Ошибка выполнения шаблона: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var formData ProjectForm
-	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-		http.Error(w, "Ошибка parsing JSON", http.StatusBadRequest)
-		return
-	}
-
-	if formData.ProjectKey == "" {
-		http.Error(w, "Ключ проекта обязателен", http.StatusBadRequest)
-		return
-	}
-
-	// Получаем задачи
-	tasks, err := jira.GetJiraTask(configObj.JiraURL, configObj.JiraToken, formData.ProjectKey)
-	if err != nil {
-		log.Printf("Ошибка получения задач: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Обновляем данные
-	mu.Lock()
-	appData.Tasks = tasks
-	appData.Error = ""
-	mu.Unlock()
-
-	// Возвращаем JSON ответ
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"tasks":   tasks,
-		"count":   len(tasks),
-	})
-}
-
-func sendHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Здесь будет логика отправки запросов к ИИ
-	w.Write([]byte("Функция отправки запросов к ИИ будет реализована позже"))
-}
-
-func modelsHandler(w http.ResponseWriter, r *http.Request) {
-	mu.RLock()
-	defer mu.RUnlock()
-	models, err := ollama.GetOllamaModels(configObj.OllamaHost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	appData.Models = models
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(appData.Models)
-}
-
-func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	mu.RLock()
-	defer mu.RUnlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(appData.Tasks)
-}
-
-// Обновление моделей (можно вызывать периодически)
-func RefreshModels() error {
-	models, err := ollama.GetOllamaModels(configObj.OllamaHost)
-	if err != nil {
-		return err
-	}
-
-	mu.Lock()
-	appData.Models = models
-	mu.Unlock()
-
-	return nil
-}
-
-func selectModelHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	modelName := r.FormValue("model")
-	mu.Lock()
-	appData.SelectedModel = modelName
-	mu.Unlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"model":   modelName,
-	})
-}
-
 // Загружаем шаблоны
 func loadTemplates() (*template.Template, error) {
-	//tmpl := template.New("base")
+	// Сначала загружаем основной шаблон
+	tmpl, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		return nil, err
+	}
 
-	// Загружаем все шаблоны
-	templates := []string{
-		"templates/base.html",
+	// Затем парсим остальные шаблоны
+	componentTemplates := []string{
+		"templates/static/head.html",
 		"templates/static/header.html",
 		"templates/static/stats.html",
 		"templates/static/models.html",
 		"templates/static/task_form.html",
 		"templates/static/tasks.html",
 		"templates/static/ai_form.html",
-		"templates/index.html",
 	}
-	// Парсим все файлы и используем имя файла как имя шаблона
-	tmpl := template.New("").Funcs(template.FuncMap{
-		"len": func(items interface{}) int {
-			switch v := items.(type) {
-			case []map[string]interface{}:
-				return len(v)
-			case []jira.JiraTask:
-				return len(v)
-			default:
-				return 0
-			}
-		},
-	})
 
-	return tmpl.ParseFiles(templates...)
+	return tmpl.ParseFiles(componentTemplates...)
 }
 
 // вспомогательную функцию для отладки
 func printTemplateNames(tmpl *template.Template) {
 	log.Printf("Загруженные шаблоны:")
-	for _, t := range tmpl.Templates() {
-		log.Printf("  - %s", t.Name())
+	for key, t := range tmpl.Templates() {
+		log.Printf("%d  - %s", key, t.Name())
 	}
 }
