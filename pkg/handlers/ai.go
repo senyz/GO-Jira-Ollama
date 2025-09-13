@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"jira-go/models"
 	"jira-go/pkg/ollama"
 	"log"
@@ -30,17 +32,39 @@ func sendAIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Читаем тело запроса для логирования
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Ошибка чтения тела запроса", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// Логируем сырое тело запроса
+	log.Printf("Raw request body: %s", string(bodyBytes))
+
+	// Восстанавливаем тело для декодирования
+	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
 	var formData struct {
 		Model       string  `json:"model"`
 		Messages    string  `json:"messages"`
-		Temperature float64 `json:"temperature,omitempty"`
+		Temperature float64 `json:"temperature,omitempty,string"`
 		TaskKey     string  `json:"taskKey,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-		http.Error(w, "Ошибка parsing JSON", http.StatusBadRequest)
+		log.Printf("JSON parsing error: %v", err)
+		log.Printf("Request body that caused error: %s", string(bodyBytes))
+		http.Error(w, "Ошибка parsing JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Закрываем тело после чтения
+	r.Body.Close()
+
+	log.Printf("Parsed data: Model=%s, Messages=%s, Temperature=%f, TaskKey=%s",
+		formData.Model, formData.Messages, formData.Temperature, formData.TaskKey)
 
 	if formData.Messages == "" {
 		http.Error(w, "Сообщение обязательно", http.StatusBadRequest)
@@ -48,8 +72,13 @@ func sendAIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if appData.SelectedModel == "" {
-		http.Error(w, "Модель не выбрана", http.StatusBadRequest)
-		return
+		if formData.Model != "" {
+			appData.SelectedModel = formData.Model
+		} else {
+			http.Error(w, "Модель не выбрана", http.StatusBadRequest)
+			return
+		}
+
 	}
 
 	// Если есть ключ задачи, добавляем информацию о задаче
@@ -72,9 +101,11 @@ func sendAIHandler(w http.ResponseWriter, r *http.Request) {
 		fullMessage = formData.Messages
 	}
 
-	mess := models.Message{
-		Role:    "user",
-		Content: fullMessage,
+	mess := []models.Message{
+		{
+			Role:    "user",
+			Content: fullMessage,
+		},
 	}
 
 	response, err := ollama.SendOllamaMessage(configObj.OllamaHost, appData.SelectedModel, mess)

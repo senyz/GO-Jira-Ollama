@@ -1,4 +1,4 @@
-<div class="section">
+
     <h2><i class="fas fa-brain"></i> Доступные модели ИИ</h2>
     
     <div class="model-selector">
@@ -11,16 +11,12 @@
             </option>
             {{end}}
         </select>
-        {{if .SelectedModel}}
-        <div class="selected-model">
-            <i class="fas fa-check"></i> Выбрано: {{.SelectedModel}}
+         
+        <div class="selected-model" id="selected-model-container" style="display: none;">
+            <i class="fas fa-check"></i> Выбрано: <span id="selected-model-text"></span>
         </div>
-        {{end}}
     </div>
-
-    
     
     <button class="btn" onclick="refreshModels()">
         <i class="fas fa-sync-alt"></i> Обновить модели
     </button>
-</div>

@@ -28,7 +28,7 @@ type OllamaModel struct {
 }
 
 // sendOllamaMessage - отправка сообщения в модель Ollama
-func SendOllamaMessage(OllamaHost string, model string, messages models.Message) (string, error) {
+func SendOllamaMessage(OllamaHost string, model string, messages []models.Message) (string, error) {
 	log.Printf("Отправка сообщения в модель %s", model)
 
 	data := map[string]interface{}{
@@ -42,7 +42,7 @@ func SendOllamaMessage(OllamaHost string, model string, messages models.Message)
 		return "", fmt.Errorf("ошибка сериализации JSON: %v", err)
 	}
 
-	url := fmt.Sprintf("http://%s/api/chat", OllamaHost)
+	url := fmt.Sprintf("%s/api/chat", OllamaHost)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("ошибка создания запроса: %v", err)
@@ -77,7 +77,7 @@ func SendOllamaMessage(OllamaHost string, model string, messages models.Message)
 func GetOllamaModels(OllamaHost string) ([]map[string]interface{}, error) {
 	log.Printf("Получение списка моделей Ollama")
 
-	tagsURL := "http://" + OllamaHost + "/api/tags"
+	tagsURL := OllamaHost + "/api/tags"
 	resp, err := http.Get(tagsURL)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка запроса списка моделей: %v", err)

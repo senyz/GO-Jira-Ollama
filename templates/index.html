@@ -7,28 +7,39 @@
     <div class="container">
         {{template "header.html" .}}
         
-        <div class="row">
-            <div class="col-6">
+        <div class="two-columns">
+            <div class="section">
                 {{template "models.html" .}}
             </div>
-            <div class="col-6">
-                {{template "task_form.html" .}}
-                {{template "stats.html" .}}
-                
-            </div>
-
+                <div class="section">
+                    {{template "task_form.html" .}}
+                    {{template "stats.html" .}}
+                </div>
         </div>
 
         {{template "ai_form.html" .}}
         {{template "tasks.html" .}}
         
-        <div id="message" class="{{ if .Error }}error{{ else }}hidden{{ end }}">
+         <div id="message" class="{{ if .Error }}error{{ else }}hidden{{ end }}">
             <i class="fas fa-exclamation-circle"></i> {{ .Error }}
         </div>
+             <!-- Подключаем внешний файл со скриптами -->
+    <script src="/static/js/scripts.js"></script>
+    <script src="/static/js/uModelsList.js"></script>
+    <script src="/static/js/gettasks.js"></script>
+    <script src="/static/js/updateAIMessage.js"></script>
+       
     </div>
 
     <script>
         const initialSelectedModel = "{{.SelectedModel}}";
+    </script>
+    <script>
+        console.log('selectModel функция доступна:', typeof selectModel === 'function');
+        // Вызовем selectModel после загрузки всех скриптов
+        if (initialSelectedModel && typeof selectModel === 'function') {
+            selectModel(initialSelectedModel);
+        }
     </script>
 </body>
 </html>

@@ -25,7 +25,7 @@ type JiraTask struct {
 func GetJiraTask(JiraURL string, JiraToken string, projectKey string) ([]JiraTask, error) {
 	log.Printf("Получение задач для проекта %s", projectKey)
 
-	url := fmt.Sprintf(JiraURL+"/rest/api/2/search?jql=project=%s+AND+created>=startOfDay()", projectKey)
+	url := fmt.Sprintf(JiraURL+"/rest/api/2/search?jql=project=%s+AND+created>=startOfDay(-7)and+status!=DONE", projectKey)
 	log.Printf("Отправка запроса к Jira API: %s", url)
 
 	resp, err := makeRequest("GET", url, JiraToken, nil)

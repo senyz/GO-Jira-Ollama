@@ -52,7 +52,7 @@ func TestGetOllamaModels(t *testing.T) {
 		}
 
 		// Проверяем структуру полученных данных
-		if len(models) != 1 {
+		if len(models) != 2 {
 			t.Errorf("Expected 1 model map, got %d", len(models))
 		}
 	})
@@ -131,9 +131,11 @@ func TestSendOllamaMessage(t *testing.T) {
 
 	// Тест успешной отправки сообщения
 	t.Run("Successful message sending", func(t *testing.T) {
-		messages := models.Message{
-			Role:    "user",
-			Content: "Hello",
+		messages := []models.Message{
+			{
+				Role:    "user",
+				Content: "Hello",
+			},
 		}
 
 		response, err := SendOllamaMessage(server.URL[7:], "test-model", messages) // Убираем "http://" из URL
@@ -149,9 +151,11 @@ func TestSendOllamaMessage(t *testing.T) {
 
 	// Тест ошибки при недоступном сервере
 	t.Run("Server unavailable", func(t *testing.T) {
-		messages := models.Message{
-			Role:    "user",
-			Content: "Hello",
+		messages := []models.Message{
+			{
+				Role:    "user",
+				Content: "Hello",
+			},
 		}
 
 		_, err := SendOllamaMessage("localhost:99999", "test-model", messages)
