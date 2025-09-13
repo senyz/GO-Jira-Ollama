@@ -161,3 +161,48 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
         }
+/* Компактные заголовки */
+.compact-header {
+    font-size: 1.2em !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 8px !important;
+}
+
+/* Компактная секция с моделью */
+.compact-section {
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* Компактный блок выбранной модели */
+.compact-selected-model {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background-color: #e8f5e8;
+    border: 1px solid #4caf50;
+    border-radius: 6px;
+    color: #2e7d32;
+    font-weight: 500;
+    font-size: 0.9em;
+    display: block;
+    width: 100%;
+}
+
+/* Акцент на секции с задачами */
+.tasks-focused .section:not(.tasks-section) {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.3s ease;
+}
+
+.tasks-focused .tasks-section {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+/* Анимация фокуса */
+.section {
+    transition: all 0.3s ease;
+}
+

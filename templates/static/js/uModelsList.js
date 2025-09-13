@@ -49,20 +49,20 @@ function updateModelsList(data) {
             const quantization = escapeHtml(model.details?.quantization_level || 'N/A');
             
             html += `
-                <div class="model-card">
-                    <h3>${modelName}</h3>
-                    <div class="model-info">
-                        <p><strong>Модель:</strong> ${modelId}</p>
-                        <p><strong>Размер:</strong> ${paramSize}</p>
-                        <p><strong>Семейство:</strong> ${family}</p>
-                        <p><strong>Формат:</strong> ${format}</p>
-                        <p><strong>Квантование:</strong> ${quantization}</p>
+                    <div class="model-card">
+                        <h3>${modelName}</h3>
+                        <div class="model-info">
+                            <p><strong>Модель:</strong> ${modelId}</p>
+                            <p><strong>Размер:</strong> ${paramSize}</p>
+                            <p><strong>Семейство:</strong> ${family}</p>
+                            <p><strong>Формат:</strong> ${format}</p>
+                            <p><strong>Квантование:</strong> ${quantization}</p>
+                        </div>
+                        <button class="btn btn-secondary select-model-btn" data-model="${escapeHtml(modelName)}">
+                            <i class="fas fa-check"></i> Выбрать
+                        </button>
                     </div>
-                    <button class="btn btn-secondary" onclick="selectModel('${modelName.replace(/'/g, "\\'")}')">
-                        <i class="fas fa-check"></i> Выбрать
-                    </button>
-                </div>
-            `;
+                `;
         });
     } else {
         console.log('Модели не получены или пустой массив');

@@ -3,9 +3,25 @@ let selectedModel = "";
 
 // Инициализация при загрузке
 $(document).ready(function() {
+    // Если модель уже выбрана при загрузке, применяем компактные стили
     if (window.initialSelectedModel) {
-        selectModel(window.initialSelectedModel);
+        setTimeout(function() {
+            applyCompactStyles();
+        }, 100);
     }
+    
+    // Автофокус на задачи если они есть
+    if ($('#tasks-list').children().length > 0) {
+        setTimeout(function() {
+            focusOnTasks();
+        }, 500);
+    }
+
+    // Обработчик для кнопок выбора модели 
+    $(document).on('click', '.select-model-btn', function() {
+        const modelName = $(this).data('model');
+        selectModel(modelName);
+    });
 });
 
 // Функция для выбора модели
@@ -52,14 +68,14 @@ function updateSelectedModelUI(modelName) {
     
     let container = $('#selected-model-container');
     // Создаем контейнер если его нет
-    if (container.length === 0) {
-    console.log('Создаем новый контейнер');
-    $('.model-selector').append(`
-        <div class="selected-model" id="selected-model-container" style="display: block !important; background: red !important; color: white !important;">
-            <i class="fas fa-check"></i> Выбрано: <span id="selected-model-text">${modelName}</span>
-        </div>
-    `);
 
+    if (container.length === 0) {
+        console.log('Создаем новый контейнер');
+        $('.model-selector').append(`
+            <div class="selected-model" id="selected-model-container">
+                <i class="fas fa-check"></i> Выбрано: <span id="selected-model-text">${modelName}</span>
+            </div>
+        `);
     } else {
         console.log('Обновляем существующий контейнер');
         // Обновляем текст если контейнер существует

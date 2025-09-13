@@ -22,6 +22,10 @@ function getTasks() {
             if (response.success) {
                 updateTasksList(response.tasks);
                 $('#tasks-count').text(response.count);
+                // После успешного получения задач фокусируемся на них
+                setTimeout(function() {
+                    focusOnTasks();
+                }, 500);
             } else {
                 alert('Ошибка при получении задач: ' + (response.error || 'Неизвестная ошибка'));
             }

@@ -28,7 +28,7 @@
     <script src="/static/js/uModelsList.js"></script>
     <script src="/static/js/gettasks.js"></script>
     <script src="/static/js/updateAIMessage.js"></script>
-       
+    <script src="/static/js/add_styles.js"></script>
     </div>
 
     <script>
@@ -37,7 +37,7 @@
     <script>
         console.log('selectModel функция доступна:', typeof selectModel === 'function');
         // Вызовем selectModel после загрузки всех скриптов
-        if (initialSelectedModel && typeof selectModel === 'function') {
+        if (initialSelectedModel && initialSelectedModel !== "" && typeof selectModel === 'function') {
             selectModel(initialSelectedModel);
         }
     </script>
